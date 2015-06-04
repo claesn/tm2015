@@ -21,8 +21,7 @@ package de.uni_koeln.spinfo.textengineering.tm.classification;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import org.apache.lucene.index.TermContext;
+import java.util.Set;
 
 import de.uni_koeln.spinfo.textengineering.tm.document.Document;
 
@@ -50,7 +49,6 @@ public class NaiveBayes implements ClassifierStrategy {
 	 */
 	@Override
 	public ClassifierStrategy train(Document document) {
-
 		/* Als "Klasse" des Dokuments nehmen wir sein topic */
 		String c = document.getTopic();
 		/*
@@ -74,17 +72,17 @@ public class NaiveBayes implements ClassifierStrategy {
 		}
 		/* Jetzt für jeden Term hochzählen: */
 		for (String term : document.getTerms()) {
-			Integer integer = termFreqs.get(term);
-			if (integer == null) {
+			Integer count = termFreqs.get(term);
+			if (count == null) {
 				/* Erstes Vorkommen des Terms: */
-				integer = 0;
+				count = 0;
 			}
 			/*
-			 * Wir addieren hier die Häufigkeit des Terms im Dokument, die wir direkt aus dem Dokument bekommen. Die
-			 * verschiedenen Classifier-Strategien sind somit zwar austauschbar, sie können jedoch in dieser Umsetzung
-			 * nur mit Document-Implementierungen zusammenarbeiten.
+			 * Wir addieren hier die Termfrequenz (also die Häufigkeit des Terms im Dokument), die wir direkt aus dem
+			 * Dokument bekommen. Die verschiedenen Classifier-Strategien sind somit zwar austauschbar, sie können
+			 * jedoch in dieser Umsetzung nur mit unseren Document-Implementierungen zusammenarbeiten.
 			 */
-			termFreqs.put(term, integer + document.getTermFrequencyOf(term));
+			termFreqs.put(term, count + document.getTermFrequencyOf(term));
 		}
 		termFrequenciesForClasses.put(c, termFreqs);
 		return this;
@@ -97,13 +95,74 @@ public class NaiveBayes implements ClassifierStrategy {
 	 */
 	@Override
 	public String classify(Document document) {
+		/* Das Maximum ... */
+		double max = Double.NEGATIVE_INFINITY;
+		Set<String> classes = termFrequenciesForClasses.keySet();
+		/* ... bzw. die beste ... */
+		String best = classes.iterator().next();
+		/* ... der möglichen Klassen ... */
+		for (String c : classes) {
+			/* ... ist die Summe aus a-priori-Wahrscheinlichkeit ... */
+			double prior = prior(c);
+			/* ... und der Summe der Termwahrscheinlichkeiten: */
+			double evidence = 0d;
+			for (String term : document.getTerms()) {
+				double cp = condprob(term, c);
+				evidence = (double) (evidence + Math.log(cp));
+			}
+			/* Die eigentliche Naive-Bayes Berechnung: */
+			double prob = prior + evidence;
+			/* Und davon das Maximum: */
+			if (prob >= max) {
+				max = prob;
+				best = c;
+			}
+		}
+		return best;
+	}
 
+	private double prior(String c) {
+		/* Die relative Frequenz der Klasse (a-priori-Wahrscheinlichkeit) */
+		Integer classFreq = classFrequencies.get(c);
+		double prior = (double) Math.log(classFreq / (double) docCount);
+		return prior;
+	}
+
+	private double condprob(String term, String c) {
+		Map<String, Integer> termFreqs = termFrequenciesForClasses.get(c);
+		Integer tf = termFreqs.get(term);
+		double condprob;
+		if (tf != null) {
+			condprob = tf / sum(termFreqs);
+		} else {
+			condprob = Double.NEGATIVE_INFINITY;
+		}
 		/*
-		 * TODO hier muss nun die 'beste Klasse' ermittelt, indem der trainierte Classifier angewendet wird ... dafür
-		 * brauchen wir noch die 'prior probability' und die Summe der Term-Evidenzen - z.B. jeweils als eigene Methode
+		 * Wenn ein Term in den Trainingsdokumenten für die Klasse nicht vorkommt, ist die Evidenz unendlich klein (und
+		 * nicht 0). Laut Theorie soll das über das sog. "Add-one-smoothing" gelöst werden, also:
+		 * 
+		 * condprob = (tf + 1) / (double) (sum(termFreqs) + (double) termFreqs.size());
+		 * 
+		 * bzw. wenn tf = null:
+		 * 
+		 * condprob = 1 / (double) (sum(termFreqs) + (double) termFreqs.size());
+		 * 
+		 * Dies soll verhindern, dass Terme nur aufgrund der Abwesenheit im Trainingsset negativ gewichtet werden, indem
+		 * man immer einen Mindestwert von '1' annimmt. In unseren Beispielen führt das jedoch zu Problemen, weil es
+		 * Klassen gibt, deren Dokumente sehr wenig Text enthalten (z.B. Welt: "autor", Spiegel: "fotostrecke"), und
+		 * deshalb bei längeren Dokumenten für (fast) alle Terme zumindest die minimale Indikation zu diesen Klassen
+		 * annehmen - was in der Summe eine zu starke Indikation ergibt... deshalb hier mit NEGATIVE_INFINITY.
 		 */
+		return condprob;
+	}
 
-		return null;
+	/* Die Summe der Häufigkeiten aller Termfrequenzen für die Klasse: */
+	private double sum(Map<String, Integer> termFreqs) {
+		int sum = 0;
+		for (Integer i : termFreqs.values()) {
+			sum += i;
+		}
+		return sum;
 	}
 
 }
