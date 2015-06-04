@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -88,8 +89,9 @@ public class TestClassifier {
 		System.out.println("Gold set: " + goldSet.size());
 		Map<Document,String> resultClasses = classifier.classify(testSet);
 		System.out.println("Result: " + resultClasses);
-		
-		// TODO Evaluation und Ausgabe ...
+		Double result = classifier.evaluate(resultClasses, goldSet);
+		Assert.assertTrue("Result must not be null", result != null);
+		System.out.println(String.format("Correct: %1.2f (%1.2f%%)", result, result * 100));
 		
 	}
 

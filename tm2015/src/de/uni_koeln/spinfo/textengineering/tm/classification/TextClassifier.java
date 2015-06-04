@@ -19,6 +19,7 @@
  */
 package de.uni_koeln.spinfo.textengineering.tm.classification;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -69,6 +70,18 @@ public class TextClassifier {
 		return resultClasses;
 	}
 
-	// TODO hier können wir dann evaluieren, was der classifier zurückgibt ...
+    public Double evaluate(Map<Document, String> resultClasses,
+            ArrayList<Document> gold) {
+        /* Wir zählen die Anzahl der Übereinstimmungen: */
+        int same = 0;
+        for (Document document : gold) {
+            String classLabel = resultClasses.get(document);
+            if (classLabel.equalsIgnoreCase(document.getTopic())) {
+                same++;
+            }
+        }
+        /* Und berechnen daraus den Anteil korrekter Werte: */
+        return same / (double) gold.size();
+    }
 	
 }
