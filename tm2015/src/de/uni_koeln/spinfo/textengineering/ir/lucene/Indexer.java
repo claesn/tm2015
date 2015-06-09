@@ -12,15 +12,14 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.SimpleFSDirectory;
-import org.apache.lucene.util.Version;
 
 public class Indexer {
 
@@ -30,27 +29,25 @@ public class Indexer {
 
 	public Indexer(String indexDir) throws IOException {
 		/* Das Verzeichnis, in dem der Index gespeichert wird: */
-		Directory luceneDir = new SimpleFSDirectory(new File(indexDir));
+		Directory luceneDir = new SimpleFSDirectory(new File(indexDir).toPath());
 		/* Der Analyzer ist für das Preprocessing zuständig (Tokenizing etc) */
 		Analyzer analyzer = new StandardAnalyzer();
 		/* Der IndexWriter wird mit dem Analyzer konfiguriert: */
-		IndexWriterConfig conf = new IndexWriterConfig(Version.LATEST,
-				analyzer);
+		IndexWriterConfig conf = new IndexWriterConfig(analyzer);
 		writer = new IndexWriter(luceneDir, conf);
 	}
 
 	/*
-	 * Wenn unser Korpus aus Lucene-Documents besteht, sind die Schritte A.1
-	 * ("acquire content") und A.2 ("build document") bereits abgehakt und die
-	 * Dokumente können hier ganz einfach zum Index hinzugefügt werden:
+	 * Wenn unser Korpus aus Lucene-Documents besteht, sind die Schritte A.1 ("acquire content") und A.2
+	 * ("build document") bereits abgehakt und die Dokumente können hier ganz einfach zum Index hinzugefügt werden:
 	 */
 	public void index(Corpus corpus) throws IOException {
 		writer.deleteAll();
 		List<Document> works = corpus.getWorks();
 		for (Document work : works) {
 			/*
-			 * A.3 + A.4 (Analyse und Indexierung) sind bei Lucene gekapselt:
-			 * Der Writer wird mit einem Analyzer initialisiert.
+			 * A.3 + A.4 (Analyse und Indexierung) sind bei Lucene gekapselt: Der Writer wird mit einem Analyzer
+			 * initialisiert.
 			 */
 			writer.addDocument(work);
 			System.out.print(".");
@@ -61,10 +58,9 @@ public class Indexer {
 	}
 
 	/*
-	 * Falls nicht, dann müssen wir die Documents hier zunächst noch selbst
-	 * erstellen (A.1 - "acquire data" sowie A.2 - 'build document') und dann
-	 * jeweils einzeln zum Index hinzufügen. Das ist im Grunde der allgemeinere
-	 * Fall: Lesen von Textdateien mittels eines einfachen Verzeichnis-Crawlers.
+	 * Falls nicht, dann müssen wir die Documents hier zunächst noch selbst erstellen (A.1 - "acquire data" sowie A.2 -
+	 * 'build document') und dann jeweils einzeln zum Index hinzufügen. Das ist im Grunde der allgemeinere Fall: Lesen
+	 * von Textdateien mittels eines einfachen Verzeichnis-Crawlers.
 	 */
 	public void index(String data) throws Exception {
 		writer.deleteAll();
@@ -93,37 +89,33 @@ public class Indexer {
 	}
 
 	/*
-	 * Schritt A.2: 'build document' - Die Klasse Document ist ein Container für
-	 * sog. 'Fields', welche die eigentlichen Daten kapseln. Strukturell ähnelt
-	 * ein Field einer Map<Key, Value>, d.h. auf einen Key (ID) wird ein Value
+	 * Schritt A.2: 'build document' - Die Klasse Document ist ein Container für sog. 'Fields', welche die eigentlichen
+	 * Daten kapseln. Strukturell ähnelt ein Field einer Map<Key, Value>, d.h. auf einen Key (ID) wird ein Value
 	 * (textuelle Daten) abgebildet.
 	 */
 	private Document buildLuceneDocument(File f) throws Exception {
 		String work = readFile(f);
 		/*
-		 * Den Dateiinhalt zunächst auszulesen ermöglicht ein eigenes Parsing,
-		 * um die Inhalte gezielt verschiedenen 'Fields' zuzuordnen:
+		 * Den Dateiinhalt zunächst auszulesen ermöglicht ein eigenes Parsing, um die Inhalte gezielt verschiedenen
+		 * 'Fields' zuzuordnen:
 		 */
 		Document doc = new Document();
 		doc.add(new TextField("contents", work, Store.NO));
 		doc.add(new TextField("text", work, Store.YES));
 		/* Den Titel ermitteln wir analog zu unserem bisherigen Vorgehen: */
-		String title = (work.trim().substring(0, work.trim().indexOf("\n")))
-				.trim();
+		String title = (work.trim().substring(0, work.trim().indexOf("\n"))).trim();
 		doc.add(new TextField("title", title, Store.YES));
 		/*
-		 * Um eine zu unseren bisherigen Ergebnissen vergleichbare docId zu
-		 * nutzen, können wir z.B. den CorpusSplitter zweckentfremden und die
-		 * docId über den Dateinamen weitergeben. Alternativ (und eigentlich
-		 * auch sauberer), könnte die docId beim Erstellen der Dateien im Sinne
-		 * von einfachen Metadaten mit in die Datei geschrieben werden, und dann
-		 * z.B. analog zum Titel extrahiert werden.
+		 * Um eine zu unseren bisherigen Ergebnissen vergleichbare docId zu nutzen, können wir z.B. den CorpusSplitter
+		 * zweckentfremden und die docId über den Dateinamen weitergeben. Alternativ (und eigentlich auch sauberer),
+		 * könnte die docId beim Erstellen der Dateien im Sinne von einfachen Metadaten mit in die Datei geschrieben
+		 * werden, und dann z.B. analog zum Titel extrahiert werden.
 		 */
 		String docId = f.getName().split("-")[0];
 		doc.add(new IntField("docId", Integer.parseInt(docId), Store.YES));
 		/* Noch ein Beispiel: Zeitpunkt der Indexierung: */
-		doc.add(new StringField("indexDate", DateTools.dateToString(new Date(),
-				DateTools.Resolution.MINUTE), Field.Store.YES));
+		doc.add(new StringField("indexDate", DateTools.dateToString(new Date(), DateTools.Resolution.MINUTE),
+				Field.Store.YES));
 		/* ... und der Dateiname: */
 		doc.add(new StringField("filename", f.getCanonicalPath(), Store.YES));
 		return doc;

@@ -15,7 +15,6 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.SimpleFSDirectory;
-import org.apache.lucene.util.Version;
 
 public class Searcher {
 
@@ -27,16 +26,15 @@ public class Searcher {
 		/*
 		 * Das Lucene-Verzeichnis:
 		 */
-		Directory directory = new SimpleFSDirectory(new File(luceneDir));
+		Directory directory = new SimpleFSDirectory(new File(luceneDir).toPath());
 		/*
-		 * Der IndexSearcher ist im Wesentlichen ein Wrapper um einen Reader,
-		 * der für den Lese-Zugriff auf das Index-Verzeichnis zuständig ist:
+		 * Der IndexSearcher ist im Wesentlichen ein Wrapper um einen Reader, der für den Lese-Zugriff auf das
+		 * Index-Verzeichnis zuständig ist:
 		 */
 		reader = DirectoryReader.open(directory);
 		searcher = new IndexSearcher(reader);
 
-		System.out.println("Index enthält " + reader.getDocCount("contents")
-				+ " Dokumente");
+		System.out.println("Index enthält " + reader.getDocCount("contents") + " Dokumente");
 	}
 
 	/*
@@ -46,16 +44,13 @@ public class Searcher {
 
 		Query query;
 		/*
-		 * B.2: build query - Analog zur Indexierung können wir hier einen
-		 * Preprocessor nutzen (QueryParser):
+		 * B.2: build query - Analog zur Indexierung können wir hier einen Preprocessor nutzen (QueryParser):
 		 */
 		Analyzer analyzer = new StandardAnalyzer();
-		QueryParser parser = new QueryParser(Version.LATEST, "contents",
-				analyzer);
+		QueryParser parser = new QueryParser("contents", analyzer);
 		query = parser.parse(searchPhrase);
 		/*
-		 * ... oder uns eine Query selbst bauen (Lucene stellt eine Reihe von
-		 * versch. Query-Typen bereit):
+		 * ... oder uns eine Query selbst bauen (Lucene stellt eine Reihe von versch. Query-Typen bereit):
 		 */
 		// query = new TermQuery(new Term("contents",query));
 		// query = new PrefixQuery(new Term("contents",query));
@@ -63,24 +58,23 @@ public class Searcher {
 		System.out.println("query: " + query);
 
 		/*
-		 * B.3: Search query - Lucene stellt verschiedene search-Methoden
-		 * bereit, die in der Regel ein gewichtetes Ergebnis zurückgeben.
+		 * B.3: Search query - Lucene stellt verschiedene search-Methoden bereit, die in der Regel ein gewichtetes
+		 * Ergebnis zurückgeben.
 		 */
 		TopDocs topDocs = searcher.search(query, 20);
 		totalHits = topDocs.totalHits;// für Tests, s. Methode unten
 		System.out.println(totalHits + " Treffer für " + searchPhrase);
 		/*
-		 * B.4: Render results - Das Gegenstück zur buildDocument()-Methode beim
-		 * Indexieren: Je nachdem, was dort definiert wurde, können hier die
-		 * Felder einzeln angesprochen und ausgelesen werden.
+		 * B.4: Render results - Das Gegenstück zur buildDocument()-Methode beim Indexieren: Je nachdem, was dort
+		 * definiert wurde, können hier die Felder einzeln angesprochen und ausgelesen werden.
 		 */
 		renderResults(topDocs);
 	}
 
 	private void renderResults(TopDocs topDocs) throws IOException {
 		/*
-		 * Analog zum Erstellen von Dokumenten im Indexer können wir hier für
-		 * jedes Dokument die enthaltenen Felder ausgeben:
+		 * Analog zum Erstellen von Dokumenten im Indexer können wir hier für jedes Dokument die enthaltenen Felder
+		 * ausgeben:
 		 */
 		for (int i = 0; i < topDocs.scoreDocs.length; i++) {
 			ScoreDoc scoreDoc = topDocs.scoreDocs[i];
