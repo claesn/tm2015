@@ -165,4 +165,14 @@ public class NaiveBayes implements ClassifierStrategy {
 		return sum;
 	}
 
+    /**
+     * {@inheritDoc}
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return getClass().getSimpleName();
+    }
+    
+
 }
