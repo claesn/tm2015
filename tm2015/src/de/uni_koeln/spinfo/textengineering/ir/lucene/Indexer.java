@@ -25,7 +25,6 @@ public class Indexer {
 
 	// das Herzstück der Lucene-Indexierung ist der sog. IndexWriter:
 	private IndexWriter writer;
-	private int numDocs;
 
 	public Indexer(String indexDir) throws IOException {
 		/* Das Verzeichnis, in dem der Index gespeichert wird: */
@@ -52,8 +51,7 @@ public class Indexer {
 			writer.addDocument(work);
 			System.out.print(".");
 		}
-		numDocs = writer.numDocs();
-		System.out.println(" " + numDocs + " Dokumente hinzugefügt.");
+		System.out.println(" " + writer.numDocs() + " Dokumente hinzugefügt.");
 		writer.close();
 	}
 
@@ -82,8 +80,7 @@ public class Indexer {
 					System.out.print(".");
 				}
 			}
-			numDocs = writer.numDocs();
-			System.out.println(" " + numDocs + " Dokumente hinzugefügt.");
+			System.out.println(" " + writer.numDocs() + " Dokumente hinzugefügt.");
 			writer.close();
 		}
 	}
@@ -140,7 +137,7 @@ public class Indexer {
 	 * Hilfsmethode für unsere Tests.
 	 */
 	public int getNumDocs() {
-		return numDocs;
+		return writer.numDocs();
 	}
 
 	public void close() throws IOException {
