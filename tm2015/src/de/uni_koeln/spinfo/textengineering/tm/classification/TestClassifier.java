@@ -29,7 +29,7 @@ public class TestClassifier {
 	 * Textklassifikation: Delegation und Strategie für austauschbare
 	 * Klassifikationsverfahren (wird schrittweise ausgebaut).
 	 */
-	private static final String DATA = "data/corpus-tm-1.db";
+	private static final String DATA = "data/corpus-tm-3.db";
 	private Corpus corpus;
 	private Set<Document> testSet;
 	private Set<Document> trainingSet;
