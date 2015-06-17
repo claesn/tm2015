@@ -67,7 +67,6 @@ public class Indexer {
 		for (Document document : docs) {
 			add(document);
 		}
-		writer.close();
 	}
 
 	/*
@@ -93,7 +92,7 @@ public class Indexer {
 				Field.Store.YES));
 		/*
 		 * Die jeweilige Root-URL dient hier als Alternative zur 'contains'-Suche mit Wilcard-Queries (da diese extrem
-		 * rechintensiv ist - eine aus Lucene-Sicht sauberere Lösung wäre z.B. die Verwendung eines NGramTokenizer auf
+		 * rechenintensiv ist - eine aus Lucene-Sicht sauberere Lösung wäre z.B. die Verwendung eines NGramTokenizer auf
 		 * das source-Feld).
 		 */
 		doc.add(new StringField("root", extractUrlRoot((WebDocument) document), Store.YES));

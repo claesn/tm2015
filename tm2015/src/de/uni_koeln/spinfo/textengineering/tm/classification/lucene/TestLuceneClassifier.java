@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.lucene.classification.KNearestNeighborClassifier;
+import org.apache.lucene.classification.SimpleNaiveBayesClassifier;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.junit.After;
 import org.junit.Assert;
@@ -61,7 +63,7 @@ public class TestLuceneClassifier {
 	private Set<Document> trainingSet;
 	private ArrayList<Document> goldSet;
 	private TextClassifier textClassifier;
-	
+
 	// für Lucene:
 	private static final String indexDir = "index-tm";
 	Searcher searcher;// für Index-Zugriffe (hier nur für den entsprechenden Test)
@@ -72,9 +74,11 @@ public class TestLuceneClassifier {
 		List<String> seed = Arrays.asList("http://www.spiegel.de", "http://www.welt.de");
 		List<WebDocument> documents = Crawler.crawl(1, seed);
 		c.addAll(documents);
+		c.close();
 		// für Lucene:
 		Indexer indexer = new Indexer(indexDir);
 		indexer.addAll(documents);
+		indexer.close();
 	}
 
 	@Before
@@ -93,10 +97,14 @@ public class TestLuceneClassifier {
 	}
 
 	@After
-	public void after() throws IOException {
+	public void after() {
 		/* Hier (nach jedem Test) schliessen. */
-		corpus.close();
-		searcher.close();
+		try {
+			corpus.close();
+			searcher.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Test
@@ -123,15 +131,23 @@ public class TestLuceneClassifier {
 
 	@Test
 	public void welt() {
-		testWith("welt");
+		try {
+			testWith("welt");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Test
 	public void spiegel() {
-		testWith("spiegel");
+		try {
+			testWith("spiegel");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
-	private void testWith(final String query) {
+	private void testWith(final String query) throws IOException {
 		setupData(query);
 		printInfo(query);
 
@@ -140,8 +156,18 @@ public class TestLuceneClassifier {
 		System.out.println(LINE);
 
 		// und Lucene: der LuceneAdapter delegiert die Aufgabe an die Lucene-Api:
-		testEval(System.nanoTime(), query, new LuceneAdapter());
+		testEval(System.nanoTime(), query, new LuceneAdapter(new SimpleNaiveBayesClassifier(), indexDir, query));
 		System.out.println(LINE);
+
+		// und Lucene: der LuceneAdapter delegiert die Aufgabe an die Lucene-Api:
+		testEval(System.nanoTime(), query, new LuceneAdapter(new KNearestNeighborClassifier(1), indexDir, query));
+		System.out.println(LINE);
+
+		/*
+		 * Damit der Test nicht am unvollständigen WekaAdapter scheitert, ist Weka hier auskommentiert. Stattdessen
+		 * findet sich ein separater Test in package tm.classification.weka.
+		 */
+//		testEval(System.nanoTime(), query, new WekaAdapter(new NaiveBayesMultinomial(), trainingSet, corpus));
 
 	}
 
@@ -160,24 +186,24 @@ public class TestLuceneClassifier {
 		System.out.println("Classification of documents from: " + query + "... ");
 		System.out.println(LINE);
 		System.out.println("Training set: " + trainingSet.size());
-		System.out.println("Testing set: " + testSet.size());
+		System.out.println("Test set: " + testSet.size());
 		System.out.println("Gold set: " + goldSet.size());
 		System.out.println(LINE);
 	}
 
 	private void testEval(final long start, final String query, final ClassifierStrategy classifier) {
 
-		//Den Classifier ...
+		// Der Classifier ...
 		System.out.print(classifier + "... ");
-		// ... trainiert ...
+		// ... wird trainiert ...
 		textClassifier = new TextClassifier(classifier, trainingSet);
 		// ... und eingesetzt:
 		Map<Document, String> resultClasses = textClassifier.classify(testSet);
-		//... Ergebnis ausgeben:
+		// ... Ergebnis ausgeben:
 		System.out.println("Result: " + resultClasses);
 		Double result = textClassifier.evaluate(resultClasses, goldSet);
 		Assert.assertTrue("Result must not be null", result != null);
-		//... Zeitmessung aufbereiten:
+		// ... Zeitmessung aufbereiten:
 		long ns = System.nanoTime() - start;
 		double ms = ns / 1000d / 1000d;
 		double s = ms / 1000d;

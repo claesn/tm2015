@@ -97,7 +97,8 @@ public class Searcher {
 		for (int i = 0; i < topDocs.scoreDocs.length; i++) {
 			ScoreDoc scoreDoc = topDocs.scoreDocs[i];
 			Document doc = searcher.doc(scoreDoc.doc);
-			System.out.print("Document: " + doc.get("source"));
+			System.out.print("Document: " + doc.get("root"));
+			System.out.print(", " + doc.get("source"));
 			System.out.print(" (vom: " + doc.get("indexDate") + ") -- ");
 			System.out.println("topic: " + doc.get("topic"));
 		}
