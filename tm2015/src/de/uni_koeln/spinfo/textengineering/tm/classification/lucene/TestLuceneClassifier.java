@@ -163,12 +163,6 @@ public class TestLuceneClassifier {
 		testEval(System.nanoTime(), query, new LuceneAdapter(new KNearestNeighborClassifier(1), indexDir, query));
 		System.out.println(LINE);
 
-		/*
-		 * Damit der Test nicht am unvollständigen WekaAdapter scheitert, ist Weka hier auskommentiert. Stattdessen
-		 * findet sich ein separater Test in package tm.classification.weka.
-		 */
-//		testEval(System.nanoTime(), query, new WekaAdapter(new NaiveBayesMultinomial(), trainingSet, corpus));
-
 	}
 
 	private void setupData(final String query) {
