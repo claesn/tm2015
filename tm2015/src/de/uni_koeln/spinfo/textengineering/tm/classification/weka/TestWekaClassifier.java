@@ -49,7 +49,8 @@ import de.uni_koeln.spinfo.textengineering.tm.document.WebDocument;
  * @author Claes Neuefeind
  */
 /*
- * Vergleichende Textklassifikation: Nutzung der WEKA-classification-API.
+ * Vergleichende Textklassifikation: Nutzung der WEKA-classifiers-API. Weka braucht etwas mehr Speicher, dafür in
+ * RunConfigurations -> Registerkarte "(x)= Arguments" das VM-argument auf mindestens -Xmx256m setzen.
  */
 public class TestWekaClassifier {
 	private static final String LINE = "------------------------------------------------------------------------";
@@ -104,7 +105,7 @@ public class TestWekaClassifier {
 		// und jetzt Weka:
 		testEval(System.nanoTime(), query, new WekaAdapter(new NaiveBayesMultinomial(), trainingSet, corpus));
 		System.out.println(LINE);
-		
+
 		// TODO: Adapter mit weiteren classifiern einsetzen ...
 	}
 

@@ -19,10 +19,15 @@
  */
 package de.uni_koeln.spinfo.textengineering.tm.classification.weka;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import weka.classifiers.Classifier;
+import weka.core.Attribute;
 import weka.core.Instance;
+import weka.core.Instances;
 import weka.core.SparseInstance;
 import de.uni_koeln.spinfo.textengineering.tm.classification.ClassifierStrategy;
 import de.uni_koeln.spinfo.textengineering.tm.corpus.Corpus;
@@ -37,44 +42,131 @@ import de.uni_koeln.spinfo.textengineering.tm.document.WebDocument;
  */
 public class WekaAdapter implements ClassifierStrategy {
 	private Classifier wekaClassifier;
-	Corpus corpus;
-	
+	private Corpus corpus;
+	private int vectorSize;
+	private List<String> classes;
+	private Instances trainingSet;
+	private boolean classifierBuilt = false;
+
 	public WekaAdapter(Classifier classifier, Set<Document> trainingSet, Corpus c) {
 		this.wekaClassifier = classifier;
 		this.corpus = c;
-		// TODO Fuer Weka brauchen wir jetzt ein paar Sachen:
+		// Für Weka brauchen wir jetzt ein paar Sachen:
 		// 1. Die Groesse des Merkmalsvektors
+		WebDocument d = (WebDocument) trainingSet.iterator().next();// cast ist nötig, um an den Vektor zu kommen ...
+		FeatureVector vector = d.getVector(corpus);
+		this.vectorSize = vector.getValues().size();
 		// 2. Die moeglichen Klassen
+		this.classes = collectClasses(trainingSet);
 		// 3. Die Struktur der Trainingsdaten
+		this.trainingSet = initTrainingSet(trainingSet);
 	}
 
+	private List<String> collectClasses(Set<Document> trainingData) {
+		Set<String> classes = new HashSet<String>();
+		for (Document document : trainingData) {
+			classes.add(document.getTopic());
+		}
+		return new ArrayList<String>(classes);
+	}
+
+	/*
+	 * Hier beschreiben wir die Struktur unserer Daten, damit Weka sie interpretieren kann, hierfür wird zunächst ein
+	 * Struktur-Vektor definiert, der in ein Instances-Objekt gepackt wird, das als Container für die konkreten
+	 * Trainingsdaten dient.
+	 */
+	private Instances initTrainingSet(Set<Document> trainingData) {
+		/* Der Vektor enthält die numerischen Merkmale (bei uns: tf-idf-Werte) sowie ein Klassenattribut: */
+		ArrayList<Attribute> structureVector = new ArrayList<Attribute>(vectorSize + 1);
+		/* Auch die Klasse wird in Weka als Vektor dargestellt: */
+		ArrayList<String> classesVector = new ArrayList<String>(this.classes.size());
+		for (String c : classes) {
+			/*
+			 * Da das Klassen-Attribut nicht numerisch ist (sondern, in Weka-Terminologie, ein nominales bzw.
+			 * String-Attribut), müssen hier alle möglichen Attributwerte angegeben werden:
+			 */
+			classesVector.add(c);
+		}
+		/* An Stelle 0 unseres Strukturvektors kommt der Klassen-Vektor: */
+		structureVector.add(new Attribute("topic", classesVector));
+		for (int i = 0; i < vectorSize; i++) {
+			/*
+			 * An jeder weiteren Position unseres Merkmalsvektors haben wir ein numerisches Merkmal (repräsentiert als
+			 * Attribute), dessen Name hier einfach seine Indexposition ist:
+			 */
+			structureVector.add(new Attribute(i + "")); // Merkmal i, d.h. was? > TF-IDF
+		}
+		/*
+		 * Schliesslich erstellen wir einen Container, der Instanzen in der hier beschriebenen Struktur enthalten wird
+		 * (also unsere Trainingsbeispiele):
+		 */
+		Instances result = new Instances("InstanceStructure", structureVector, vectorSize + 1);
+		/*
+		 * Wobei wir hier erneut angeben muessen, an welcher Stelle der Merkmalsvektoren die Klasse zu finden ist:
+		 */
+		result.setClassIndex(0);
+		return result;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * @see de.uni_koeln.spinfo.textengineering.tm.classification.ClassifierStrategy#train(de.uni_koeln.spinfo.textengineering.tm.document.Document,
+	 *      java.lang.String)
+	 */
 	@Override
 	public ClassifierStrategy train(Document document) {
-		// TODO Bei Weka können wir wieder dokumentweise trainieren ...
-		return null;
+		trainingSet.add(instance(document));
+		// wir merken uns, dass das Training noch nicht abgeschlossen ist ...
+		classifierBuilt = false;
+		return this;
+	}
+
+	private Instance instance(Document document) {
+
+		List<Float> values = ((WebDocument) document).getVector(corpus).getValues();
+		String topic = document.getTopic();
+
+		/* Die Instanz enthält alle Merkmale: */
+		double[] vals = new double[values.size() + 1];
+		for (int i = 0; i < values.size(); i++) {
+			vals[i + 1] = values.get(i);
+		}
+		Instance instance = new SparseInstance(1, vals);
+		/*
+		 * Weka muss 'erklärt' bekommen, was die Werte bedeuten - dies ist im Trainingsset beschrieben:
+		 */
+		instance.setDataset(trainingSet);
+		/*
+		 * Beim Training geben wir den Instanzen ein Klassenlabel, bei der Klassifikation ist die Klasse unbekannt:
+		 */
+		if (topic == null) {
+			instance.setClassMissing(); // bei Klassifikation
+		} else
+			instance.setClassValue(topic); // beim Training
+		return instance;
 	}
 
 	@Override
-	public String classify(Document document){
-		
+	public String classify(Document document) {
 		try {
-			double classifyInstance = wekaClassifier.classifyInstance(instance(document));
-			// TODO mit dem double müssen wir den Klassennamen rekonstruieren ...
+			// beim ersten Aufruf prüfen wir, ob der classifier bereits erstellt wurde:
+			if (!classifierBuilt) {
+				wekaClassifier.buildClassifier(trainingSet);
+				classifierBuilt = true;
+			}
+			// Weka gibt als Ergebnis den Index des Klassen-Vektors zurück:
+			int i = (int) wekaClassifier.classifyInstance(instance(document));
+			// ... mit dem wir den Klassennamen rekonstruieren können:
+			return classes.get(i);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return null;
 	}
 
-	private Instance instance(Document document) {
-		
-		WebDocument d = (WebDocument) document;
-		FeatureVector vector = d.getVector(corpus);
-		String topic = d.getTopic();
-		//TODO: vec in instance packen, topic in instance packen ...
-		Instance instance = new SparseInstance(vector.getValues().size() + 1);
-		
-		return instance ;
+	public String toString() {
+		return String.format("%s for %s", getClass().getSimpleName(), wekaClassifier.getClass().getSimpleName());
 	}
 
 }
