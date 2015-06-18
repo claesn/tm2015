@@ -5,7 +5,7 @@ h2. package ir (Information-Retrieval)
 
 table(#tableborders){ border: 2px solid #ccc; border-collapse: collapse; border-spacing: 0; width:100%;}.
 | | *Inhalt* | *Ressourcen/Dependencies* | *Literatur* |
-| "basic":https://github.com/claesn/tm2015/tree/master/tm2015/src/de/uni_koeln/spinfo/textengineering/ir/basic | Korpus, Lineare Suche, Term-Dokument-Matrix | "Shakespeare":http://www.gutenberg.org/cache/epub/100/pg100.txt | IIR Kap. 1 |
+| "basic":https://github.com/claesn/tm2015/tree/master/tm2015/src/de/uni_koeln/spinfo/textengineering/ir/basic | Korpus, Lineare Suche, Term-Dokument-Matrix | "Shakespeare":http://www.gutenberg.org/cache/epub/100/pg100.txt | "IIR":http://www-nlp.stanford.edu/IR-book/ Kap. 1 |
 | "boole":https://github.com/claesn/tm2015/tree/master/tm2015/src/de/uni_koeln/spinfo/textengineering/ir/boole | Invertierter Index, Listen-Intersection, Vorverarbeitung, Positional Index, PositionalIntersect | | IIR Kap. 1 + 2 |
 | "ranked":https://github.com/claesn/tm2015/tree/master/tm2015/src/de/uni_koeln/spinfo/textengineering/ir/ranked | Ranked Retrieval: Termgewichtung, Vector Space Model | | IIR Kap. 6 + 7 |
 | "evaluation":https://github.com/claesn/tm2015/tree/master/tm2015/src/de/uni_koeln/spinfo/textengineering/ir/evaluation | Evaluation: Precision, Recall, F-Maß | | IIR Kap. 8 |
@@ -19,5 +19,5 @@ table(#tableborders){ border: 2px solid #ccc; border-collapse: collapse; border-
 | "document":https://github.com/claesn/tm2015/tree/master/tm2015/src/de/uni_koeln/spinfo/textengineering/tm/document | Document, Topics, TermIndex, FeatureVector |  |  |
 | "corpus":https://github.com/claesn/tm2015/tree/master/tm2015/src/de/uni_koeln/spinfo/textengineering/tm/corpus | Korpus, DB, DocumentIndex, Crawler | db4o, crawler (siehe package "ir.web":https://github.com/claesn/tm2015/tree/master/tm2015/src/de/uni_koeln/spinfo/textengineering/ir/web/crawler ) | |
 | "classification":https://github.com/claesn/tm2015/tree/master/tm2015/src/de/uni_koeln/spinfo/textengineering/tm/classification | TextClassifier, Naive Bayes | | IIR 13 |
-| "classification.lucene":https://github.com/claesn/tm2015/tree/master/tm2015/src/de/uni_koeln/spinfo/textengineering/tm/classification/lucene | Textkategorisierung mit Lucene, Indexierung und Suche | lucene-classification (5.1.0) | IIR 14, "Lucene in Action":http://www.manning.com/hatcher3/ |
-| "classification.weka":https://github.com/claesn/tm2015/tree/master/tm2015/src/de/uni_koeln/spinfo/textengineering/tm/classification/weka | Adapter für Weka-classifier, Indexierung und Suche | weka-dev ((3.7.12) | IIR 13-15, "Data Mining":http://www.cs.waikato.ac.nz/ml/weka/book.html |
+| "classification.lucene":https://github.com/claesn/tm2015/tree/master/tm2015/src/de/uni_koeln/spinfo/textengineering/tm/classification/lucene | Textkategorisierung mit Lucene, Indexierung und Suche | lucene-classification (5.1.0) | IIR Kap. 13-14, "Lucene in Action":http://www.manning.com/hatcher3/ |
+| "classification.weka":https://github.com/claesn/tm2015/tree/master/tm2015/src/de/uni_koeln/spinfo/textengineering/tm/classification/weka | Adapter für Weka-classifier, Indexierung und Suche | weka-dev (3.7.12) | IIR Kap. 13-15, "Data Mining":http://www.cs.waikato.ac.nz/ml/weka/book.html |
